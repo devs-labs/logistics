@@ -47,7 +47,7 @@ public:
             }
         }
         if (found) {
-            mSelectedWaitingTransport = *it;
+            mReadyTransports.push_back(*it);
             mWaitingTransports.erase(it);
         }
     }
@@ -83,11 +83,6 @@ public:
 
     void updateSigma(const vle::devs::Time& time)
     {
-
-        std::cout.precision(12);
-        std::cout << (double)time << "SIGMA: " << mTransports.toString()
-                  << std::endl;
-
         if (mTransports.empty()) {
             mSigma = vle::devs::Time::infinity;
         } else {
@@ -100,11 +95,7 @@ public:
                 }
                 ++it;
             }
-            if (mPhase == SEND_SEARCH or mSigma > t - time) {
-
-                std::cout << (double)time << "SIGMA: " << t << " "
-                          << time << std::endl;
-
+            if (mPhase == SEND_LOAD or mSigma > t - time) {
                 mSigma = t - time;
             }
         }
@@ -141,38 +132,44 @@ public:
     void output(const vle::devs::Time& time,
                 vle::devs::ExternalEventList& output) const
     {
-        if (mPhase == SEND_SEARCH) {
+        if (mPhase == SEND_LOAD) {
             vle::devs::ExternalEvent* ee =
-                new vle::devs::ExternalEvent("search");
+                new vle::devs::ExternalEvent("load");
 
             std::cout << time << " - [" << getModelName()
-                      << "] DECISION: SEARCH -> "
+                      << "] DECISION LOAD: "
                       << mSelectedArrivedTransport->toString() << std::endl;
 
-            ee << vle::devs::attribute("type",
-                                       mSelectedArrivedTransport->type());
+            ee << vle::devs::attribute(
+                "type",mSelectedArrivedTransport->contentType());
             ee << vle::devs::attribute("transport",
                                        mSelectedArrivedTransport->toValue());
             output.addEvent(ee);
-        } else if (mPhase == SEND_TAKE) {
-            vle::devs::ExternalEvent* ee =
-                new vle::devs::ExternalEvent("take");
+        } else if (mPhase == SEND_DEPART) {
+            Transports::const_iterator it = mReadyTransports.begin();
 
             std::cout << time << " - [" << getModelName()
-                      << "] DECISION: TAKE -> "
-                      << mSelectedWaitingTransport->toString() << std::endl;
+                      << "] DECISION DEPART: { ";
 
-            ee << vle::devs::attribute("type",
-                                       mSelectedWaitingTransport->type());
-            ee << vle::devs::attribute("transport",
-                                       mSelectedWaitingTransport->toValue());
-            output.addEvent(ee);
+            while (it != mReadyTransports.end()) {
+                vle::devs::ExternalEvent* ee =
+                    new vle::devs::ExternalEvent("depart");
+
+                std::cout << (*it)->id() << " ";
+                ee << vle::devs::attribute("type", (*it)->contentType());
+                ee << vle::devs::attribute("id", (int)(*it)->id());
+                output.addEvent(ee);
+                ++it;
+            }
+
+            std::cout << "}" << std::endl;
+
         }
     }
 
     vle::devs::Time timeAdvance() const
     {
-        if (mPhase == SEND_TAKE or mPhase == SEND_SEARCH) {
+        if (mPhase == SEND_DEPART or mPhase == SEND_LOAD) {
             return 0;
         } else {
             return mSigma;
@@ -188,14 +185,13 @@ public:
 
         if (mPhase == IDLE) {
             searchTransport(time);
-            mPhase = SEND_SEARCH;
-        } else if (mPhase == SEND_SEARCH) {
+            mPhase = SEND_LOAD;
+        } else if (mPhase == SEND_LOAD) {
             waitContainer();
             updateSigma(time);
             mPhase = IDLE;
-        } else if (mPhase == SEND_TAKE) {
-            delete mSelectedWaitingTransport;
-            mSelectedWaitingTransport = 0;
+        } else if (mPhase == SEND_DEPART) {
+            mReadyTransports.clear();
             mPhase = IDLE;
         }
     }
@@ -221,31 +217,20 @@ public:
 
                 transport->arrived(time);
                 mTransports.push_back(transport);
-            } else if ((*it)->onPort("found")) {
-                unsigned int transportID =
-                    (*it)->getIntegerAttributeValue("id_transport");
+            } else if ((*it)->onPort("loaded")) {
+                TransportID transportID =
+                    (*it)->getIntegerAttributeValue("id");
 
                 std::cout << time << " - [" << getModelName()
-                          << "] DECISION FOUND: transport -> " << transportID
-                          << std::endl;
-
-                mContainerID = (*it)->getIntegerAttributeValue("id_container");
-
-                std::cout << time << " - [" << getModelName()
-                          << "] DECISION FOUND: container -> " << mContainerID
+                          << "] DECISION LOADED: transport -> " << transportID
                           << std::endl;
 
                 removeWaitingTransport(transportID);
-                mPhase = SEND_TAKE;
+                mPhase = SEND_DEPART;
             }
             ++it;
         }
         updateSigma(time);
-
-        // std::cout << time << " - [" << getModelName()
-        //           << "] DECISION TRANSPORT: sigma => "
-        //           << mSigma << std::endl;
-
     }
 
     vle::value::Value* observation(
@@ -261,16 +246,15 @@ public:
     }
 
 private:
-    enum phase { IDLE, SEND_SEARCH, SEND_TAKE };
+    enum phase { IDLE, SEND_LOAD, SEND_DEPART };
 
     // state
     phase mPhase;
     vle::devs::Time mSigma;
     Transports mTransports;
     Transport* mSelectedArrivedTransport;
-    Transport* mSelectedWaitingTransport;
     Transports mWaitingTransports;
-    unsigned int mContainerID;
+    Transports mReadyTransports;
 };
 
 } // namespace logistics

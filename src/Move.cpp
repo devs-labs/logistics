@@ -1,5 +1,5 @@
 /**
- * @file Split.cpp
+ * @file Move.cpp
  * @author The VLE Development Team
  * See the AUTHORS or Authors.txt file
  */
@@ -22,74 +22,76 @@
  */
 
 #include <vle/devs/Dynamics.hpp>
-#include <Container.hpp>
+#include <Transport.hpp>
+#include <list>
 
 namespace logistics {
 
-class Split : public vle::devs::Dynamics
+class Move : public vle::devs::Dynamics
 {
 public:
-    Split(const vle::devs::DynamicsInit& init,
-          const vle::devs::InitEventList& events) :
+    Move(const vle::devs::DynamicsInit& init,
+         const vle::devs::InitEventList& events) :
         vle::devs::Dynamics(init, events)
+    { }
+
+    vle::devs::ExternalEvent* cloneExternalEvent(
+        vle::devs::ExternalEvent* event, const std::string& portName) const
     {
+        vle::devs::ExternalEvent* ee = new vle::devs::ExternalEvent(
+            portName);
+        vle::value::Map::const_iterator it = event->getAttributes().begin();
+
+        while (it != event->getAttributes().end()) {
+            ee->putAttribute(it->first, it->second->clone());
+            ++it;
+        }
+        return ee;
     }
 
     vle::devs::Time init(const vle::devs::Time& /* time */)
     {
+        mPhase = IDLE;
         return vle::devs::Time::infinity;
     }
 
     void output(const vle::devs::Time& /* time */,
                 vle::devs::ExternalEventList& output) const
     {
-        if (mPhase == SEND) {
-            for (std::vector < Containers* >::const_iterator it =
-                     mContainersList.begin(); it != mContainersList.end();
-                 ++it) {
-                for (Containers::const_iterator itc = (*it)->begin();
-                     itc != (*it)->end(); ++itc) {
-                    vle::devs::ExternalEvent* ee =
-                        new vle::devs::ExternalEvent("out");
-
-                    ee << vle::devs::attribute("container",
-                                               (*itc)->toValue());
-                    output.addEvent(ee);
-                }
-            }
+        for (events::const_iterator it = mEvents.begin(); it != mEvents.end();
+             ++it) {
+            output.addEvent(*it);
         }
     }
 
     vle::devs::Time timeAdvance() const
     {
-        if (mPhase == SEND) {
-            return 0;
-        } else {
-            return vle::devs::Time::infinity;
-        }
+        if (mPhase == IDLE) return vle::devs::Time::infinity;
+        else return 0;
     }
 
     void internalTransition(const vle::devs::Time& /* time */)
     {
-        mContainersList.clear();
+        mEvents.clear();
         mPhase = IDLE;
     }
 
     void externalTransition(
-        const vle::devs::ExternalEventList& events, const vle::devs::Time& time)
+        const vle::devs::ExternalEventList& events,
+        const vle::devs::Time& time)
     {
         vle::devs::ExternalEventList::const_iterator it = events.begin();
 
         while (it != events.end()) {
-            Containers* containers = new Containers(
-                vle::value::toSetValue(
-                    (*it)->getAttributeValue("containers")));
 
-            std::cout << time << " - [" << getModelName()
-                      << "] SPLIT: " << containers->toString() << std::endl;
+            if ((*it)->onPort("in")) {
+                Transport transport(vle::value::toMapValue(
+                                        (*it)->getAttributeValue("transport")));
+                std::string portName =
+                    (vle::fmt("to_%1%") % transport.destination()).str();
 
-            containers->arrived(time);
-            mContainersList.push_back(containers);
+                mEvents.push_back(cloneExternalEvent(*it, portName));
+            }
             ++it;
         }
         mPhase = SEND;
@@ -98,11 +100,13 @@ public:
 private:
     enum phase { IDLE, SEND };
 
+    typedef std::list < vle::devs::ExternalEvent* > events;
+
     // state
     phase mPhase;
-    std::vector < Containers* > mContainersList;
+    events mEvents;
 };
 
 } // namespace logistics
 
-DECLARE_NAMED_DYNAMICS(Split, logistics::Split);
+DECLARE_NAMED_DYNAMICS(Move, logistics::Move);

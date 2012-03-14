@@ -7,8 +7,9 @@ LINK_DIRECTORIES(
   ${VLE_LIBRARY_DIRS}
   ${Boost_LIBRARY_DIRS})
 
-ADD_LIBRARY(logistics SHARED ArrivalGenerator.cpp Container.hpp Decision.cpp
-  Dispatch.cpp Split.cpp Transit.cpp Transport.hpp TransportGenerator.cpp)
+ADD_LIBRARY(logistics SHARED Container.hpp Decision.cpp Dispatch.cpp
+  EntryDispatch.cpp Move.cpp Split.cpp Transit.cpp Transport.hpp
+  TransportGenerator.cpp)
 
 TARGET_LINK_LIBRARIES(logistics
   ${VLE_LIBRARIES}

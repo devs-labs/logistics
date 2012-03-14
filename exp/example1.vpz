@@ -2,132 +2,147 @@
 <!DOCTYPE vle_project PUBLIC "-//VLE TEAM//DTD Strict//EN" "http://www.vle-project.org/vle-1.0.0.dtd">
 <vle_project version="1.0.1" date="sam., 10 mars 2012" author="Eric Ramat">
 <structures>
-<model name="Top model" type="coupled" x="0" y="0" width="1723" height="895"  >
+<model name="Top model" type="coupled" x="0" y="0" width="1760" height="982"  >
 <out>
  <port name="out" />
 </out>
 <submodels>
-<model name="A" type="atomic" conditions="cond_A,cond_arrival_generator_Bateaux" dynamics="dyn_arrival_generator" x="47" y="37" width="100" height="45" >
-<out>
- <port name="out" />
-</out>
-</model>
-<model name="B" type="atomic" conditions="cond_B,cond_arrival_generator_Bateaux" dynamics="dyn_arrival_generator" x="28" y="113" width="100" height="45" >
-<out>
- <port name="out" />
-</out>
-</model>
-<model name="C" type="atomic" conditions="cond_C,cond_arrival_generator_Camions" dynamics="dyn_arrival_generator" x="36" y="222" width="100" height="45" >
-<out>
- <port name="out" />
-</out>
-</model>
-<model name="D" type="atomic" conditions="cond_D,cond_arrival_generator_Camions" dynamics="dyn_arrival_generator" x="40" y="340" width="100" height="45" >
-<out>
- <port name="out" />
-</out>
-</model>
-<model name="Platforme" type="coupled" x="358" y="162" width="100" height="90"  >
+<model name="Move_from_platform1" type="atomic" dynamics="dyn_move" x="464" y="249" width="100" height="60" >
 <in>
- <port name="A" />
- <port name="B" />
- <port name="C" />
- <port name="D" />
+ <port name="in" />
 </in>
 <out>
+ <port name="to_Platform2" />
+ <port name="to_Platform3" />
+</out>
+</model>
+<model name="ProductionA" type="atomic" conditions="cond_A,cond_arrival_generator,cond_arrival_generator_Bateaux" dynamics="dyn_arrival_generator" x="19" y="14" width="100" height="45" >
+<out>
  <port name="out" />
 </out>
-<submodels>
-<model name="Decision" type="atomic" dynamics="dyn_decision" observables="obs_transport" x="564" y="57" width="100" height="60" >
+</model>
+<model name="ProductionB" type="atomic" conditions="cond_B,cond_arrival_generator,cond_arrival_generator_Bateaux" dynamics="dyn_arrival_generator" x="148" y="91" width="100" height="45" >
+<out>
+ <port name="out" />
+</out>
+</model>
+<model name="ProductionC" type="atomic" conditions="cond_C,cond_arrival_generator,cond_arrival_generator_Camions" dynamics="dyn_arrival_generator" x="68" y="246" width="100" height="45" >
+<out>
+ <port name="out" />
+</out>
+</model>
+<model name="ProductionD" type="atomic" conditions="cond_D,cond_arrival_generator,cond_arrival_generator_Camions" dynamics="dyn_arrival_generator" x="91" y="353" width="100" height="45" >
+<out>
+ <port name="out" />
+</out>
+</model>
+<model name="Transport" type="atomic" conditions="cond_transport_generator" dynamics="dyn_transport_generator" x="244" y="276" width="100" height="45" >
+<out>
+ <port name="out" />
+</out>
+</model>
+<model name="Platforme1" type="coupled" x="314" y="153" width="100" height="60"  >
 <in>
- <port name="found" />
+ <port name="in" />
  <port name="transport" />
 </in>
 <out>
- <port name="search" />
- <port name="take" />
+ <port name="out" />
 </out>
-</model>
-<model name="QuaisBateaux" type="atomic" dynamics="dyn_split" x="199" y="95" width="100" height="60" >
+<submodels>
+<model name="Decision" type="atomic" dynamics="dyn_decision" observables="obs_transport" x="446" y="270" width="100" height="60" >
 <in>
- <port name="A" />
- <port name="B" />
+ <port name="loaded" />
+ <port name="transport" />
 </in>
 <out>
- <port name="out" />
+ <port name="depart" />
+ <port name="load" />
 </out>
 </model>
-<model name="QuaisCamions" type="atomic" dynamics="dyn_split" x="195" y="272" width="100" height="60" >
-<in>
- <port name="C" />
- <port name="D" />
-</in>
-<out>
- <port name="out" />
-</out>
-</model>
-<model name="Transport" type="atomic" conditions="cond_transport_generator" dynamics="dyn_transport_generator" x="325" y="41" width="100" height="45" >
-<out>
- <port name="out" />
-</out>
-</model>
-<model name="Transit" type="coupled" x="426" y="207" width="100" height="75"  >
+<model name="Dispatch1" type="atomic" dynamics="dyn_entry_dispatch" x="49" y="98" width="100" height="75" >
 <in>
  <port name="in" />
- <port name="search" />
- <port name="take" />
 </in>
 <out>
- <port name="found" />
+ <port name="boat" />
+ <port name="train" />
+ <port name="truck" />
+</out>
+</model>
+<model name="QuaisBateaux" type="atomic" dynamics="dyn_split" x="200" y="32" width="100" height="45" >
+<in>
+ <port name="in" />
+</in>
+<out>
+ <port name="out" />
+</out>
+</model>
+<model name="QuaisCamions" type="atomic" dynamics="dyn_split" x="194" y="189" width="100" height="45" >
+<in>
+ <port name="in" />
+</in>
+<out>
+ <port name="out" />
+</out>
+</model>
+<model name="Transit" type="coupled" x="503" y="81" width="100" height="75"  >
+<in>
+ <port name="depart" />
+ <port name="in" />
+ <port name="load" />
+</in>
+<out>
+ <port name="loaded" />
  <port name="out" />
 </out>
 <submodels>
 <model name="Dispatch" type="atomic" dynamics="dyn_dispatch" x="125" y="142" width="100" height="120" >
 <in>
  <port name="container" />
- <port name="search" />
- <port name="take" />
+ <port name="depart" />
+ <port name="load" />
 </in>
 <out>
  <port name="container_Food" />
  <port name="container_NoFood" />
- <port name="search_Food" />
- <port name="search_NoFood" />
- <port name="take_Food" />
- <port name="take_NoFood" />
+ <port name="depart_Food" />
+ <port name="depart_NoFood" />
+ <port name="load_Food" />
+ <port name="load_NoFood" />
 </out>
 </model>
 <model name="ZoneTransitFood" type="atomic" dynamics="dyn_transit" observables="obs_transit" x="340" y="62" width="100" height="75" >
 <in>
  <port name="container" />
- <port name="search" />
- <port name="take" />
+ <port name="depart" />
+ <port name="load" />
 </in>
 <out>
- <port name="found" />
+ <port name="loaded" />
  <port name="out" />
 </out>
 </model>
 <model name="ZoneTransitNoFood" type="atomic" dynamics="dyn_transit" observables="obs_transit" x="393" y="273" width="100" height="75" >
 <in>
  <port name="container" />
- <port name="search" />
- <port name="take" />
+ <port name="depart" />
+ <port name="load" />
 </in>
 <out>
- <port name="found" />
+ <port name="loaded" />
  <port name="out" />
 </out>
 </model>
 </submodels>
 <connections>
 <connection type="output">
- <origin model="ZoneTransitFood" port="found" />
- <destination model="Transit" port="found" />
+ <origin model="ZoneTransitFood" port="loaded" />
+ <destination model="Transit" port="loaded" />
 </connection>
 <connection type="output">
- <origin model="ZoneTransitNoFood" port="found" />
- <destination model="Transit" port="found" />
+ <origin model="ZoneTransitNoFood" port="loaded" />
+ <destination model="Transit" port="loaded" />
 </connection>
 <connection type="output">
  <origin model="ZoneTransitFood" port="out" />
@@ -138,16 +153,16 @@
  <destination model="Transit" port="out" />
 </connection>
 <connection type="input">
+ <origin model="Transit" port="depart" />
+ <destination model="Dispatch" port="depart" />
+</connection>
+<connection type="input">
  <origin model="Transit" port="in" />
  <destination model="Dispatch" port="container" />
 </connection>
 <connection type="input">
- <origin model="Transit" port="search" />
- <destination model="Dispatch" port="search" />
-</connection>
-<connection type="input">
- <origin model="Transit" port="take" />
- <destination model="Dispatch" port="take" />
+ <origin model="Transit" port="load" />
+ <destination model="Dispatch" port="load" />
 </connection>
 <connection type="internal">
  <origin model="Dispatch" port="container_Food" />
@@ -158,20 +173,20 @@
  <destination model="ZoneTransitNoFood" port="container" />
 </connection>
 <connection type="internal">
- <origin model="Dispatch" port="search_Food" />
- <destination model="ZoneTransitFood" port="search" />
+ <origin model="Dispatch" port="depart_Food" />
+ <destination model="ZoneTransitFood" port="depart" />
 </connection>
 <connection type="internal">
- <origin model="Dispatch" port="search_NoFood" />
- <destination model="ZoneTransitNoFood" port="search" />
+ <origin model="Dispatch" port="depart_NoFood" />
+ <destination model="ZoneTransitNoFood" port="depart" />
 </connection>
 <connection type="internal">
- <origin model="Dispatch" port="take_Food" />
- <destination model="ZoneTransitFood" port="take" />
+ <origin model="Dispatch" port="load_Food" />
+ <destination model="ZoneTransitFood" port="load" />
 </connection>
 <connection type="internal">
- <origin model="Dispatch" port="take_NoFood" />
- <destination model="ZoneTransitNoFood" port="take" />
+ <origin model="Dispatch" port="load_NoFood" />
+ <destination model="ZoneTransitNoFood" port="load" />
 </connection>
 </connections>
 </model>
@@ -179,31 +194,31 @@
 <connections>
 <connection type="output">
  <origin model="Transit" port="out" />
- <destination model="Platforme" port="out" />
+ <destination model="Platforme1" port="out" />
 </connection>
 <connection type="input">
- <origin model="Platforme" port="A" />
- <destination model="QuaisBateaux" port="A" />
+ <origin model="Platforme1" port="in" />
+ <destination model="Dispatch1" port="in" />
 </connection>
 <connection type="input">
- <origin model="Platforme" port="B" />
- <destination model="QuaisBateaux" port="B" />
-</connection>
-<connection type="input">
- <origin model="Platforme" port="C" />
- <destination model="QuaisCamions" port="C" />
-</connection>
-<connection type="input">
- <origin model="Platforme" port="D" />
- <destination model="QuaisCamions" port="D" />
+ <origin model="Platforme1" port="transport" />
+ <destination model="Decision" port="transport" />
 </connection>
 <connection type="internal">
- <origin model="Decision" port="search" />
- <destination model="Transit" port="search" />
+ <origin model="Decision" port="depart" />
+ <destination model="Transit" port="depart" />
 </connection>
 <connection type="internal">
- <origin model="Decision" port="take" />
- <destination model="Transit" port="take" />
+ <origin model="Decision" port="load" />
+ <destination model="Transit" port="load" />
+</connection>
+<connection type="internal">
+ <origin model="Dispatch1" port="boat" />
+ <destination model="QuaisBateaux" port="in" />
+</connection>
+<connection type="internal">
+ <origin model="Dispatch1" port="truck" />
+ <destination model="QuaisCamions" port="in" />
 </connection>
 <connection type="internal">
  <origin model="QuaisBateaux" port="out" />
@@ -214,49 +229,111 @@
  <destination model="Transit" port="in" />
 </connection>
 <connection type="internal">
- <origin model="Transit" port="found" />
- <destination model="Decision" port="found" />
+ <origin model="Transit" port="loaded" />
+ <destination model="Decision" port="loaded" />
 </connection>
-<connection type="internal">
- <origin model="Transport" port="out" />
- <destination model="Decision" port="transport" />
+</connections>
+</model>
+<model name="Plateforme3" type="coupled" x="655" y="348" width="100" height="45"  >
+<in>
+ <port name="in" />
+</in>
+<out>
+ <port name="out" />
+</out>
+<submodels>
+<model name="Dispatch3" type="atomic" dynamics="dyn_entry_dispatch" x="129" y="75" width="100" height="75" >
+<in>
+ <port name="in" />
+</in>
+<out>
+ <port name="boat" />
+ <port name="train" />
+ <port name="truck" />
+</out>
+</model>
+</submodels>
+<connections>
+<connection type="input">
+ <origin model="Plateforme3" port="in" />
+ <destination model="Dispatch3" port="in" />
+</connection>
+</connections>
+</model>
+<model name="Plateforme2" type="coupled" x="655" y="156" width="100" height="45"  >
+<in>
+ <port name="in" />
+</in>
+<out>
+ <port name="out" />
+</out>
+<submodels>
+<model name="Dispatch2" type="atomic" dynamics="dyn_entry_dispatch" x="129" y="75" width="100" height="75" >
+<in>
+ <port name="in" />
+</in>
+<out>
+ <port name="boat" />
+ <port name="train" />
+ <port name="truck" />
+</out>
+</model>
+</submodels>
+<connections>
+<connection type="input">
+ <origin model="Plateforme2" port="in" />
+ <destination model="Dispatch2" port="in" />
 </connection>
 </connections>
 </model>
 </submodels>
 <connections>
-<connection type="output">
- <origin model="Platforme" port="out" />
- <destination model="Top model" port="out" />
+<connection type="internal">
+ <origin model="Move_from_platform1" port="to_Platform2" />
+ <destination model="Plateforme2" port="in" />
 </connection>
 <connection type="internal">
- <origin model="A" port="out" />
- <destination model="Platforme" port="A" />
+ <origin model="Move_from_platform1" port="to_Platform3" />
+ <destination model="Plateforme3" port="in" />
 </connection>
 <connection type="internal">
- <origin model="B" port="out" />
- <destination model="Platforme" port="B" />
+ <origin model="Platforme1" port="out" />
+ <destination model="Move_from_platform1" port="in" />
 </connection>
 <connection type="internal">
- <origin model="C" port="out" />
- <destination model="Platforme" port="C" />
+ <origin model="ProductionA" port="out" />
+ <destination model="Platforme1" port="in" />
 </connection>
 <connection type="internal">
- <origin model="D" port="out" />
- <destination model="Platforme" port="D" />
+ <origin model="ProductionB" port="out" />
+ <destination model="Platforme1" port="in" />
+</connection>
+<connection type="internal">
+ <origin model="ProductionC" port="out" />
+ <destination model="Platforme1" port="in" />
+</connection>
+<connection type="internal">
+ <origin model="ProductionD" port="out" />
+ <destination model="Platforme1" port="in" />
+</connection>
+<connection type="internal">
+ <origin model="Transport" port="out" />
+ <destination model="Platforme1" port="transport" />
 </connection>
 </connections>
 </model>
 </structures>
 <dynamics>
-<dynamic name="dyn_arrival_generator" library="logistics" model="ArrivalGenerator" package="logistics" type="local"  />
+<dynamic name="dyn_arrival_generator" library="logistics" model="TransportGenerator" package="logistics" type="local"  />
 <dynamic name="dyn_decision" library="logistics" model="Decision" package="logistics" type="local"  />
 <dynamic name="dyn_dispatch" library="logistics" model="Dispatch" package="logistics" type="local"  />
+<dynamic name="dyn_entry_dispatch" library="logistics" model="EntryDispatch" package="logistics" type="local"  />
+<dynamic name="dyn_move" library="logistics" model="Move" package="logistics" type="local"  />
 <dynamic name="dyn_split" library="logistics" model="Split" package="logistics" type="local"  />
 <dynamic name="dyn_transit" library="logistics" model="Transit" package="logistics" type="local"  />
 <dynamic name="dyn_transport_generator" library="logistics" model="TransportGenerator" package="logistics" type="local"  />
 </dynamics>
-<experiment name="exp" duration="1000.000000000000000" begin="0.000000000000000" combination="linear" seed="545404204" >
+<experiment name="exp" duration="20.000000000000000" begin="0.000000000000000" combination="linear" seed="545404204" >
 <conditions>
 <condition name="cond_A" >
  <port name="MaxDuration" >
@@ -302,55 +379,66 @@
 <string>D</string>
 </port>
 </condition>
-<condition name="cond_arrival_generator_Bateaux" >
+<condition name="cond_arrival_generator" >
+ <port name="Destinations" >
+<set><string>A</string><string>B</string><string>C</string><string>D</string></set>
+</port>
  <port name="MaxCapacity" >
-<integer>100</integer>
+<integer>1</integer>
 </port>
- <port name="MaxSize" >
-<integer>2</integer>
-</port>
- <port name="MaxTravelDuration" >
-<integer>100</integer>
+ <port name="MaxStayDuration" >
+<double>2.000000000000000</double>
 </port>
  <port name="MinCapacity" >
-<integer>50</integer>
+<integer>1</integer>
+</port>
+ <port name="MinStayDuration" >
+<double>2.000000000000000</double>
+</port>
+</condition>
+<condition name="cond_arrival_generator_Bateaux" >
+ <port name="ContainerPresent" >
+<boolean>true</boolean>
+</port>
+ <port name="MaxTravelDuration" >
+<double>100.000000000000000</double>
 </port>
  <port name="MinSize" >
 <integer>2</integer>
 </port>
  <port name="MinTravelDuration" >
-<integer>20</integer>
+<double>20.000000000000000</double>
 </port>
- <port name="Names" >
-<set><string>A</string><string>B</string><string>C</string><string>D</string></set>
+ <port name="TransportType" >
+<integer>0</integer>
 </port>
 </condition>
 <condition name="cond_arrival_generator_Camions" >
- <port name="MaxCapacity" >
-<integer>100</integer>
-</port>
- <port name="MaxSize" >
-<integer>1</integer>
+ <port name="ContainerPresent" >
+<boolean>true</boolean>
 </port>
  <port name="MaxTravelDuration" >
-<integer>100</integer>
-</port>
- <port name="MinCapacity" >
-<integer>50</integer>
+<double>100.000000000000000</double>
 </port>
  <port name="MinSize" >
 <integer>1</integer>
 </port>
  <port name="MinTravelDuration" >
-<integer>20</integer>
+<double>20.000000000000000</double>
 </port>
- <port name="Names" >
-<set><string>A</string><string>B</string><string>C</string><string>D</string></set>
+ <port name="TransportType" >
+<integer>1</integer>
 </port>
 </condition>
 <condition name="cond_transport_generator" >
+ <port name="ContainerPresent" >
+<boolean>false</boolean>
+</port>
+ <port name="Destinations" >
+<set><string>Platform2</string><string>Platform3</string></set>
+</port>
  <port name="MaxCapacity" >
-<integer>100</integer>
+<integer>1</integer>
 </port>
  <port name="MaxDuration" >
 <double>1.000000000000000</double>
@@ -359,7 +447,7 @@
 <double>2.000000000000000</double>
 </port>
  <port name="MinCapacity" >
-<integer>50</integer>
+<integer>1</integer>
 </port>
  <port name="MinDuration" >
 <double>1.000000000000000</double>
@@ -367,8 +455,8 @@
  <port name="MinStayDuration" >
 <double>2.000000000000000</double>
 </port>
- <port name="Names" >
-<set><string>A</string><string>B</string><string>C</string><string>D</string></set>
+ <port name="TransportType" >
+<integer>1</integer>
 </port>
 </condition>
 </conditions>
@@ -391,7 +479,7 @@
  <attachedview name="view_transit" />
 </port>
 
-<port name="wait-transport-time" >
+<port name="transport-lateness" >
  <attachedview name="view_transit" />
 </port>
 

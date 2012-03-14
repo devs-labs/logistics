@@ -34,23 +34,24 @@ namespace logistics {
 
 enum ContentType { FOOD, NOFOOD };
 
+typedef unsigned int ContainerID;
+
 typedef std::vector < std::string > path_t;
 
 class Container
 {
 public:
-    Container(int id, double capacity, const std::string& source,
+    Container(ContainerID id, const std::string& source,
               const std::string& destination, ContentType contentType,
               Time exigibilityDate) :
-        mID(id), mCapacity(capacity), mSource(source),
+        mID(id), mSource(source),
         mDestination(destination), mContentType(contentType),
         mExigibilityDate(exigibilityDate)
     { }
 
     Container(const Map& value)
     {
-        mID = toInteger(value.get("Id"));
-        mCapacity = toDouble(value.get("Capacity"));
+        mID = (ContainerID)toInteger(value.get("Id"));
         mSource = vle::value::toString(value.get("Source"));
         mDestination = vle::value::toString(value.get("Destination"));
         mContentType =
@@ -74,23 +75,20 @@ public:
     Time arrivalDate() const
     { return mArrivalDate; }
 
-    double capacity() const
-    { return mCapacity; }
-
     std::string destination() const
     { return mDestination; }
 
     Time exigibilityDate() const
     { return mExigibilityDate; }
 
-    unsigned int id() const
+    ContainerID id() const
     { return mID; }
 
     std::string toString() const
     {
         std::ostringstream str;
 
-        str << "Container[ " << mID << " " << mCapacity << " " << mSource
+        str << "Container[ " << mID << " " << " " << mSource
             << " " << mDestination
             << " " << ((mContentType == FOOD) ? "FOOD" : "NOFOOD")
             << " " << mExigibilityDate << " < ";
@@ -106,8 +104,7 @@ public:
     {
         Map* value = new Map;
 
-        value->addInt("Id", mID);
-        value->addDouble("Capacity", mCapacity);
+        value->addInt("Id", (int)mID);
         value->addString("Source", mSource);
         value->addString("Destination", mDestination);
         value->addInt("ContentType", mContentType);
@@ -128,8 +125,7 @@ public:
     { return mContentType; }
 
 private:
-    int mID;
-    double mCapacity;
+    ContainerID mID;
     std::string mSource;
     std::string mDestination;
     ContentType mContentType;

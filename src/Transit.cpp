@@ -27,8 +27,6 @@
 
 namespace logistics {
 
-typedef std::list < Transport* > TransportList;
-
 class Transit : public vle::devs::Dynamics
 {
 public:
@@ -38,13 +36,47 @@ public:
     {
     }
 
-    void removeSelectedContainer()
+    void removeReadyTransports()
+    {
+        ReadyTransports::iterator it = mReadyTransports.begin();
+
+        while (it != mReadyTransports.end()) {
+            {
+                LoadingTransports::iterator itc = mLoadingTransports.find(*it);
+                const Containers& containers = itc->second;
+                Containers::const_iterator itcc = containers.begin();
+
+                while (itcc != containers.end()) {
+                    removeSelectedContainer(*itcc);
+                    ++itcc;
+                }
+                mLoadingTransports.erase(itc);
+            }
+            {
+                bool found = false;
+                OrderedTransportList::iterator itc = mWaitingTransports.begin();
+
+                while (not found and itc != mWaitingTransports.end()) {
+                    if ((*itc)->id() == *it) {
+                        mWaitingTransports.erase(itc);
+                        found = true;
+                    } else {
+                        ++itc;
+                    }
+                }
+            }
+            ++it;
+        }
+        mReadyTransports.clear();
+    }
+
+    void removeSelectedContainer(Container* container)
     {
         bool found = false;
-        Containers::iterator it = mContainers.begin();
+        Containers::iterator it = mWaitingContainers.begin();
 
-        while (not found and it != mContainers.end()) {
-            if ((*it) == mSelectedContainer) {
+        while (not found and it != mWaitingContainers.end()) {
+            if ((*it) == container) {
                 found = true;
             } else {
                 ++it;
@@ -52,64 +84,122 @@ public:
         }
         if (found) {
             delete *it;
-            mContainers.erase(it);
-            mSelectedContainer = 0;
+            mWaitingContainers.erase(it);
         }
     }
 
-    bool searchContainer()
+    void loadContainer(Transport* transport)
     {
         vle::devs::Time time = vle::devs::Time::infinity;
-        Containers::const_iterator it = mContainers.begin();
+        Containers::iterator it = mWaitingContainers.begin();
+        Containers::iterator itc;
+        Container* selectedContainer = 0;
 
-        std::cout <<"[" << getModelName() << "] DECISION: SEARCH CONTAINER";
-
-        mSelectedContainer = 0;
-        while (it != mContainers.end()) {
+        while (it != mWaitingContainers.end()) {
             if ((*it)->exigibilityDate() < time) {
                 time = (*it)->exigibilityDate();
-                mSelectedContainer = *it;
+                itc = it;
+                selectedContainer = *it;
+            }
+            ++it;
+        }
+        if (selectedContainer != 0) {
+            mLoadingTransports[transport->id()].push_back(selectedContainer);
+            mWaitingContainers.erase(itc);
+        }
+    }
+
+    bool loadContainers()
+    {
+        bool loaded = false;
+        bool stop = false;
+        OrderedTransportList::const_iterator it =
+            mWaitingTransports.begin();
+
+        while (not stop and it != mWaitingTransports.end()) {
+            LoadingTransports::const_iterator itt =
+                mLoadingTransports.find((*it)->id());
+
+            if (itt == mLoadingTransports.end()) {
+                mLoadingTransports[(*it)->id()] = Containers();
+                itt = mLoadingTransports.find((*it)->id());
+            }
+            if ((int)itt->second.size() < (*it)->capacity()) {
+                loadContainer(*it);
+                loaded = (int)itt->second.size() == (*it)->capacity();
+                stop = mWaitingContainers.empty();
             } else {
                 ++it;
             }
         }
-        if (mSelectedContainer != 0) {
-
-            std::cout << " => " << mSelectedContainer->id() << std::endl;
-
-            return true;
-        } else {
-
-            std::cout << " => NOT FOUND" << std::endl;
-
-            return false;
-        }
+        return loaded;
     }
+
+/*  - - - - - - - - - - - - - --ooOoo-- - - - - - - - - - - -  */
 
     vle::devs::Time init(const vle::devs::Time& /* time */)
     {
         return vle::devs::Time::infinity;
     }
 
-    void output(const vle::devs::Time& /* time */,
+    void output(const vle::devs::Time& time,
                 vle::devs::ExternalEventList& output) const
     {
-        if (mPhase == FOUND) {
-            vle::devs::ExternalEvent* ee =
-                new vle::devs::ExternalEvent("found");
-            Transport* transport = *mWaitingTransports.begin();
+        if (mPhase == LOADED) {
+            OrderedTransportList::const_iterator it =
+                mWaitingTransports.begin();
 
-            ee << vle::devs::attribute("id_transport",
-                                       (int)transport->id());
-            ee << vle::devs::attribute("id_container",
-                                       (int)mSelectedContainer->id());
-            output.addEvent(ee);
+            std::cout << time << " - [" << getModelName()
+                      << "] TRANSIT LOADED: ";
+
+            while (it != mWaitingTransports.end()) {
+                LoadingTransports::const_iterator itt =
+                    mLoadingTransports.find((*it)->id());
+
+                if (itt != mLoadingTransports.end() and
+                    (int)itt->second.size() == (*it)->capacity()) {
+                    vle::devs::ExternalEvent* ee =
+                        new vle::devs::ExternalEvent("loaded");
+
+                    std::cout << (*it)->id() << " ";
+
+                    ee << vle::devs::attribute("id", (int)(*it)->id());
+                    output.addEvent(ee);
+                }
+                ++it;
+            }
+
+            std::cout << std::endl;
+
+        } else if (mPhase == OUT) {
+            ReadyTransports::const_iterator it = mReadyTransports.begin();
+
+            std::cout << time << " - [" << getModelName()
+                      << "] TRANSIT OUT: { ";
+
+            while (it != mReadyTransports.end()) {
+                vle::devs::ExternalEvent* ee =
+                    new vle::devs::ExternalEvent("out");
+                LoadingTransports::const_iterator itc =
+                    mLoadingTransports.find(*it);
+                Transport* transport = mWaitingTransports.find(*it);
+
+                std::cout << *it << " ";
+
+                ee << vle::devs::attribute("transport", transport->toValue());
+                ee << vle::devs::attribute("containers", itc->second.toValue());
+                output.addEvent(ee);
+                ++it;
+            }
+
+            std::cout << "}" << std::endl;
+
         }
     }
 
     vle::devs::Time timeAdvance() const
     {
-        if (mPhase == FOUND) {
+        if (mPhase == LOADED or mPhase == OUT) {
             return 0;
         } else {
             return vle::devs::Time::infinity;
@@ -118,8 +208,8 @@ public:
 
     void internalTransition(const vle::devs::Time& /* time */)
     {
-        if (mPhase == FOUND) {
-            mWaitingTransports.pop_front();
+        if (mPhase == OUT) {
+            removeReadyTransports();
         }
         mPhase = IDLE;
     }
@@ -136,41 +226,53 @@ public:
                         (*it)->getAttributeValue("container")));
 
                 std::cout << time << " - [" << getModelName()
-                          << " ] TRANSIT CONTAINER: " << container->toString()
+                          << "] TRANSIT CONTAINER: " << container->toString()
                           << std::endl;
 
                 container->arrived(time);
-                mContainers.push_back(container);
-            } else if ((*it)->onPort("search")) {
+                mWaitingContainers.push_back(container);
+            } else if ((*it)->onPort("load")) {
                 Transport* transport = new Transport(
                     vle::value::toMapValue(
                         (*it)->getAttributeValue("transport")));
 
                 std::cout << time << " - [" << getModelName()
-                          << " ] TRANSIT SEARCH: " << transport->id()
+                          << "] TRANSIT LOAD: " << transport->id()
                           << std::endl;
 
                 mWaitingTransports.push_back(transport);
 
                 std::cout << time << " - [" << getModelName()
-                          << " ] TRANSIT SEARCH: wait = "
+                          << "] TRANSIT LOAD: wait = "
                           << mWaitingTransports.size() << std::endl;
 
-            } else if ((*it)->onPort("take")) {
-                Transport* transport = new Transport(
-                    vle::value::toMapValue(
-                        (*it)->getAttributeValue("transport")));
+            } else if ((*it)->onPort("depart")) {
+                TransportID transportID =
+                    (TransportID)(*it)->getIntegerAttributeValue("id");
 
                 std::cout << time << " - [" << getModelName()
-                          << " ] TRANSIT TAKE: " << transport->id()
+                          << "] TRANSIT DEPART: " << transportID
                           << std::endl;
 
-                removeSelectedContainer();
+                mReadyTransports.push_back(transportID);
+                mPhase = OUT;
             }
             ++it;
         }
-        if (not mWaitingTransports.empty() and searchContainer()) {
-            mPhase = FOUND;
+        if (not mWaitingTransports.empty() and mWaitingContainers.size() > 0) {
+
+            std::cout << time << " - [" << getModelName()
+                      << "] TRANSIT LOADING";
+
+            if (loadContainers()) {
+
+                std::cout << " ==> loaded" << std::endl;
+
+                mPhase = LOADED;
+            }
+
+            std::cout  << std::endl;
+
         }
     }
 
@@ -178,14 +280,14 @@ public:
         const vle::devs::ObservationEvent& event) const
     {
         if (event.onPort("size")) {
-            return vle::value::Integer::create(mContainers.size());
+            return vle::value::Integer::create(mWaitingContainers.size());
         } else if (event.onPort("waiting")) {
             return vle::value::Integer::create(mWaitingTransports.size());
         } else if (event.onPort("time-in-transit")) {
             double t = 0;
-            Containers::const_iterator it = mContainers.begin();
+            Containers::const_iterator it = mWaitingContainers.begin();
 
-            while (it != mContainers.end()) {
+            while (it != mWaitingContainers.end()) {
                 double e = event.getTime() - (*it)->arrivalDate();
 
                 if (e > 0 ) {
@@ -193,14 +295,16 @@ public:
                 }
                 ++it;
             }
-            if (mContainers.empty()) {
+            if (mWaitingContainers.empty()) {
                 return vle::value::Double::create(0);
             } else {
-                return vle::value::Double::create(t / mContainers.size());
+                return vle::value::Double::create(
+                    t / mWaitingContainers.size());
             }
-        } else if (event.onPort("wait-transport-time")) {
+        } else if (event.onPort("transport-lateness")) {
             double t = 0;
-            TransportList::const_iterator it = mWaitingTransports.begin();
+            OrderedTransportList::const_iterator it =
+                mWaitingTransports.begin();
 
             while (it != mWaitingTransports.end()) {
                 double e = event.getTime() - (*it)->departureDate();
@@ -222,13 +326,15 @@ public:
     }
 
 private:
-    enum phase { IDLE, FOUND };
+    enum phase { IDLE, LOADED, OUT };
 
     // state
     phase mPhase;
-    Containers mContainers;
-    Container* mSelectedContainer;
-    TransportList mWaitingTransports;
+
+    Containers mWaitingContainers;
+    OrderedTransportList mWaitingTransports;
+    LoadingTransports mLoadingTransports;
+    ReadyTransports mReadyTransports;
 };
 
 } // namespace logistics

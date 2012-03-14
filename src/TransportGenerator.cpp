@@ -34,6 +34,10 @@ public:
                      const vle::devs::InitEventList& events) :
         vle::devs::Dynamics(init, events)
     {
+        mContainerPresent =
+            vle::value::toBoolean(events.get("ContainerPresent"));
+        mTransportType =
+            (TransportType)vle::value::toInteger(events.get("TransportType"));
         mMinCapacity = vle::value::toInteger(events.get("MinCapacity"));
         mMaxCapacity = vle::value::toInteger(events.get("MaxCapacity"));
         mMinDuration = vle::value::toDouble(events.get("MinDuration"));
@@ -45,26 +49,62 @@ public:
 
         {
             const vle::value::Set* values =
-                vle::value::toSetValue(events.get("Names"));
+                vle::value::toSetValue(events.get("Destinations"));
 
             for (unsigned int i = 0; i < values->size(); ++i) {
-                mNames.push_back(vle::value::toString(values->get(i)));
+                mDestinationNames.push_back(
+                    vle::value::toString(values->get(i)));
             }
+        }
+
+        if (mContainerPresent) {
+            mMinTravelDuration =
+                vle::value::toDouble(events.get("MinTravelDuration"));
+            mMaxTravelDuration =
+                vle::value::toDouble(events.get("MaxTravelDuration"));
         }
     }
 
-    void generate(const vle::devs::Time& time)
+    void generateContainers(const vle::devs::Time& time, unsigned int capacity)
+    {
+        unsigned int size = (mMinSize< capacity) ?
+            rand().getInt(mMinSize, capacity) : capacity;
+
+        std::cout << time << " - [" << getModelName()
+                  << "] CONTAINERS GENERATE: " << size << std::endl;
+
+        for (unsigned int i = 0; i < size; ++i) {
+            std::string source =
+                mDestinationNames[rand().getInt(0,
+                                                mDestinationNames.size() - 1)];
+            std::string destination =
+                mDestinationNames[rand().getInt(0,
+                                                mDestinationNames.size() - 1)];
+            ContentType type = rand().getBool() ? FOOD : NOFOOD;
+            vle::devs::Time exigibilityDate =
+                time + rand().getDouble(mMinTravelDuration, mMaxTravelDuration);
+
+            mContainers.add(
+                new Container(mContainerID++, source, destination,
+                              type, exigibilityDate));
+        }
+    }
+
+    void generateTransport(const vle::devs::Time& time)
     {
         unsigned int capacity = rand().getInt(mMinCapacity, mMaxCapacity);
         std::string destination =
-            mNames[rand().getInt(0, mNames.size() - 1)];
+            mDestinationNames[rand().getInt(0, mDestinationNames.size() - 1)];
         ContentType type = rand().getBool() ? FOOD : NOFOOD;
         vle::devs::Time departureDate =
             time + rand().getDouble(mMinStayDuration, mMaxStayDuration);
 
-        mTransport = new Transport(mTransportID++,
+        mTransport = new Transport(mTransportID++, mTransportType,
                                    capacity, destination,
                                    type, departureDate);
+        if (mContainerPresent) {
+            generateContainers(time, capacity);
+        }
     }
 
     vle::devs::Time nextDate() const
@@ -86,6 +126,7 @@ public:
             vle::devs::ExternalEvent* ee = new vle::devs::ExternalEvent("out");
 
             ee << vle::devs::attribute("transport", mTransport->toValue());
+            ee << vle::devs::attribute("containers", mContainers.toValue());
             output.addEvent(ee);
         }
     }
@@ -103,11 +144,12 @@ public:
     void internalTransition(const vle::devs::Time& time)
     {
         if (mPhase == IDLE) {
-            generate(time);
+            generateTransport(time);
             mPhase = SEND;
         } else if (mPhase == SEND) {
             delete mTransport;
             mTransport = 0;
+            mContainers.clear();
             mPhase = IDLE;
         }
     }
@@ -116,21 +158,34 @@ private:
     enum phase { IDLE, SEND };
 
     // parameters
-    double mMinCapacity;
-    double mMaxCapacity;
+    bool mContainerPresent;
     double mMinDuration;
     double mMaxDuration;
+
+    // transport parameters
+    TransportType mTransportType;
+    double mMinCapacity;
+    double mMaxCapacity;
     double mMinStayDuration;
     double mMaxStayDuration;
-    std::vector < std::string > mNames;
+
+    // container parameters
+    unsigned int mMinSize;
+    double mMinTravelDuration;
+    double mMaxTravelDuration;
+
+    std::vector < std::string > mDestinationNames;
 
     // state
     phase mPhase;
     static int mTransportID;
     Transport* mTransport;
+    static int mContainerID;
+    Containers mContainers;
 };
 
 int TransportGenerator::mTransportID = 0;
+int TransportGenerator::mContainerID = 0;
 
 } // namespace logistics
 

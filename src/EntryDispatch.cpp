@@ -1,5 +1,5 @@
 /**
- * @file Dispatch.cpp
+ * @file EntryDispatch.cpp
  * @author The VLE Development Team
  * See the AUTHORS or Authors.txt file
  */
@@ -22,19 +22,18 @@
  */
 
 #include <vle/devs/Dynamics.hpp>
-#include <Container.hpp>
+#include <Transport.hpp>
 #include <list>
 
 namespace logistics {
 
-class Dispatch : public vle::devs::Dynamics
+class EntryDispatch : public vle::devs::Dynamics
 {
 public:
-    Dispatch(const vle::devs::DynamicsInit& init,
-             const vle::devs::InitEventList& events) :
+    EntryDispatch(const vle::devs::DynamicsInit& init,
+              const vle::devs::InitEventList& events) :
         vle::devs::Dynamics(init, events)
-    {
-    }
+    { }
 
     vle::devs::ExternalEvent* cloneExternalEvent(
         vle::devs::ExternalEvent* event, const std::string& portName) const
@@ -84,23 +83,25 @@ public:
         vle::devs::ExternalEventList::const_iterator it = events.begin();
 
         while (it != events.end()) {
-            ContentType type;
 
-            if ((*it)->onPort("container")) {
-                Container container(vle::value::toMapValue(
-                                        (*it)->getAttributeValue("container")));
+            if ((*it)->onPort("in")) {
+                Transport transport(vle::value::toMapValue(
+                                        (*it)->getAttributeValue("transport")));
+                std::string portName;
 
-                type = container.type();
-            } else {
-                type = (ContentType)(
-                    (*it)->getIntegerAttributeValue("type"));
+                if (transport.type() == BOAT) {
+                    portName = "boat";
+                } else if (transport.type() == TRUCK) {
+                    portName = "truck";
+                } else if (transport.type() == TRAIN) {
+                    portName = "train";
+                }
+                mEvents.push_back(cloneExternalEvent(*it, portName));
+
+                std::cout << time << " - [" << getModelName()
+                          << "] ENTRY DISPTACH: " << portName << std::endl;
+
             }
-
-            std::string portName =
-                (vle::fmt("%1%_%2%") % (*it)->getPortName() %
-                 (type == FOOD ? "Food" : "NoFood")).str();
-
-            mEvents.push_back(cloneExternalEvent(*it, portName));
             ++it;
         }
         mPhase = SEND;
@@ -118,4 +119,4 @@ private:
 
 } // namespace logistics
 
-DECLARE_NAMED_DYNAMICS(Dispatch, logistics::Dispatch);
+DECLARE_NAMED_DYNAMICS(EntryDispatch, logistics::EntryDispatch);
