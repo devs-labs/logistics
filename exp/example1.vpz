@@ -333,7 +333,7 @@
 <dynamic name="dyn_transit" library="logistics" model="Transit" package="logistics" type="local"  />
 <dynamic name="dyn_transport_generator" library="logistics" model="TransportGenerator" package="logistics" type="local"  />
 </dynamics>
-<experiment name="exp" duration="20.000000000000000" begin="0.000000000000000" combination="linear" seed="545404204" >
+<experiment name="exp" duration="200.000000000000000" begin="0.000000000000000" combination="linear" seed="545404204" >
 <conditions>
 <condition name="cond_A" >
  <port name="MaxDuration" >
@@ -348,10 +348,10 @@
 </condition>
 <condition name="cond_B" >
  <port name="MaxDuration" >
-<double>15.000000000000000</double>
+<double>5.000000000000000</double>
 </port>
  <port name="MinDuration" >
-<double>15.000000000000000</double>
+<double>5.000000000000000</double>
 </port>
  <port name="Name" >
 <string>B</string>
@@ -384,7 +384,7 @@
 <set><string>A</string><string>B</string><string>C</string><string>D</string></set>
 </port>
  <port name="MaxCapacity" >
-<integer>1</integer>
+<integer>2</integer>
 </port>
  <port name="MaxStayDuration" >
 <double>2.000000000000000</double>
@@ -444,7 +444,7 @@
 <double>1.000000000000000</double>
 </port>
  <port name="MaxStayDuration" >
-<double>2.000000000000000</double>
+<double>10.000000000000000</double>
 </port>
  <port name="MinCapacity" >
 <integer>1</integer>
@@ -453,7 +453,7 @@
 <double>1.000000000000000</double>
 </port>
  <port name="MinStayDuration" >
-<double>2.000000000000000</double>
+<double>10.000000000000000</double>
 </port>
  <port name="TransportType" >
 <integer>1</integer>
