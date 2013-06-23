@@ -58,6 +58,7 @@ public:
         }
 
         if (mContainerPresent) {
+            mMinSize = vle::value::toInteger(events.get("MinSize"));
             mMinTravelDuration =
                 vle::value::toDouble(events.get("MinTravelDuration"));
             mMaxTravelDuration =
@@ -67,7 +68,7 @@ public:
 
     void generateContainers(const vle::devs::Time& time, unsigned int capacity)
     {
-        unsigned int size = (mMinSize< capacity) ?
+        unsigned int size = (mMinSize < capacity) ?
             rand().getInt(mMinSize, capacity) : capacity;
 
         std::cout << time << " - [" << getModelName()
